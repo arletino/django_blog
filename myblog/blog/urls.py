@@ -14,4 +14,12 @@ urlpatterns=[
         views.PostListView.post_detail, 
         name='post_detail'
         ),
+    path(
+        '<int:post_id>/share/',
+        views.PostListView.post_share, name='post_share'
+        ),
+    path(
+        '<int:post_id>/comment/',
+        views.post_comment, name='post_comment'
+    ),
 ]
