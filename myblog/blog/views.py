@@ -14,8 +14,11 @@ from .forms import EmailPostForm # Форма для отправки по по�
 from django.core.mail import send_mail
 from django.db.models import Count # Агрегирующая функция из модуля models
 
-from django.contrib.postgres.search import SearchVector # Поиск по нескольким полям
-from .forms import EmailPostForm, CommentForm, SearchForm # Реализация поиска
+from django.contrib.postgres.search import SearchVector    # Поиск по нескольким полям
+from .forms import EmailPostForm, CommentForm, SearchForm  # Реализация поиска
+from django.contrib.postgres.search import SearchQuery     # Трансляция термины в поисковой запрос
+from django.contrib.postgres.search import SearchRank      # Ранжирование поиска                                    
+
 
 class PostListView(ListView):
     '''
