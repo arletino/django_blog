@@ -15,3 +15,6 @@ class CommentForm(forms.ModelForm):
     class Meta: 
         model = Comment # Получаем форму из модели на прямую
         fields = ['name', 'email', 'body']
+
+class SearchForm(forms.Form):
+    query = forms.CharField()

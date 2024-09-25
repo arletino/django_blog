@@ -1,17 +1,21 @@
 from django.shortcuts import render
 
 # Create your views here.
-# from .models import Post
-# from django.http import Http404
+from .models import Post
+from django.http import Http404
 from django.shortcuts import get_object_or_404 # function instead error DoesNotExist
-# from django.core.paginator import Paginator # Page making
-# from django.core.paginator import EmptyPage, \
-#                                   PageNotAnInteger
+from django.core.paginator import Paginator # Page making
+from django.core.paginator import EmptyPage, \
+                                  PageNotAnInteger
 
 from .models import Post
 from django.views.generic import ListView
 from .forms import EmailPostForm # Форма для отправки по почте
 from django.core.mail import send_mail
+from django.db.models import Count # Агрегирующая функция из модуля models
+
+from django.contrib.postgres.search import SearchVector # Поиск по нескольким полям
+from .forms import EmailPostForm, CommentForm, SearchForm # Реализация поиска
 
 class PostListView(ListView):
     '''
@@ -25,27 +29,6 @@ class PostListView(ListView):
     context_object_name = 'posts'
     paginate_by = 3 # По страничная разбивка вывода
     template_name = 'blog/post/list.html' 
-
-# def post_list(request):
-#     post_list = Post.published.all()
-#     paginator = Paginator(post_list, 3)
-#     page_number = request.GET.get('page',1)
-#     try:
-#         posts = paginator.page(page_number)
-#     except PageNotAnInteger:
-#         # Если page_number не число, не целое число
-#         # Вернем первую страницу
-#         posts = paginator.page(1)
-#     except EmptyPage:
-#         # Если page_number вне диапазона
-#         # Вернем последнюю страницу
-#         posts = paginator.page(paginator.num_pages)
-    
-#     return render(
-#         request,
-#         'blog/post/list.html',
-#         {'posts': posts}
-#     ) 
 
     def post_detail(request, year, month, day, post):
         # try:      # Do not use get_object_or_404
@@ -64,12 +47,20 @@ class PostListView(ListView):
         comments = post.comments.filter(active=True)
         # Форма для комментирования 
         form = CommentForm()
+        # Список схожих постов
+        post_tags_ids = post.tags.values_list('id', flat=True)
+        similar_posts = Post.published.filter(tags__in=post_tags_ids)\
+                                      .exclude(id=post.id)
+        similar_posts = similar_posts.annotate(same_tags=Count('tags'))\
+                                      .order_by('-same_tags','-publish')[:4]
         return render(
                     request,
                     'blog/post/detail.html',
                     {'post':post,
                      'comments':comments,
-                     'form':form}
+                     'form':form,
+                     'similar_posts': similar_posts
+                     }
                     )
     
     def post_share(request, post_id):
@@ -131,4 +122,55 @@ def post_comment(request, post_id):
                   {'post':post,
                    'form':form,
                    'comment':comment}
-                  ) 
+                  )
+
+from taggit.models import Tag
+
+
+def post_list(request, tag_slug=None):
+    post_list = Post.published.all()
+    tag = None
+    if tag_slug:
+        tag = get_object_or_404(Tag, slug=tag_slug)
+        post_list = post_list.filter(tags__in=[tag])
+    paginator = Paginator(post_list, 3)
+    page_number = request.GET.get('page',1)
+    try:
+        posts = paginator.page(page_number)
+    except PageNotAnInteger:
+        # Если page_number не число, не целое число
+        # Вернем первую страницу
+        posts = paginator.page(1)
+    except EmptyPage:
+        # Если page_number вне диапазона
+        # Вернем последнюю страницу
+        posts = paginator.page(paginator.num_pages)
+    
+    return render(
+        request,
+        'blog/post/list.html',
+        {'posts': posts,
+         'tag': tag}
+    )
+
+def post_search(request):
+    '''Полнотекстовый поиск по полям 'title', 'body' '''
+    form = SearchForm()
+    query = None
+    results = []
+
+    if 'query' in request.GET:
+        form = SearchForm(request.GET)
+        if form.is_valid():
+            query = form.cleaned_data['query']
+            results = Post.published.annotate(
+                search=SearchVector('title', 'body'),
+            ).filter(search=query)
+    return render(
+        request,
+        'blog/post/search.html',
+        {'form': form,
+         'query': query,
+         'results': results}
+    )
+  

@@ -2,6 +2,8 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
 from django.urls import reverse # For function ger_absolute_url()
+from taggit.managers import TaggableManager # Библиотека для тегирирования
+
 
 # Create your models here.
 class PublishManager(models.Manager):
@@ -37,6 +39,7 @@ class Post(models.Model):
                               default=Status.DRAFT
                               )
 
+    tags = TaggableManager()
 
     class Status(models.TextChoices):
         DRAFT = 'DF', 'Draft'

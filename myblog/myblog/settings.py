@@ -27,7 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
+SITE_ID = 1
 # Application definition
 
 INSTALLED_APPS = [
@@ -38,6 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'blog.apps.BlogConfig',
+    'taggit',                       #
+    'django.contrib.sites',         # 
+    'django.contrib.sitemaps',      # Карта сайта
+    'django.contrib.postgres'
 ]
 
 MIDDLEWARE = [
@@ -75,9 +79,17 @@ WSGI_APPLICATION = 'myblog.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': BASE_DIR / 'db.sqlite3',
+    # },
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'djpgsql',
+        'USER': 'stanuser',
+        'PASSWORD': 'pgpwd4stan',
+        'HOST': '192.168.1.66',
+        'PORT': 6432,
     }
 }
 
